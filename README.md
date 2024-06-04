@@ -1,30 +1,19 @@
-# SwAV-TF
+# Climate Clustering Model
 
-By: [Ayush Thakur](https://twitter.com/ayushthakur0) and [Sayak Paul](https://twitter.com/RisingSayak)
+Recognizing the pressing need for adaptable models in the face of climate change effects, this project aims to examine these impacts using local climate data. By clustering climate patterns and analysing trends, the goal is to gather evidence of shifts in observed climate patterns over time. To conduct this analysis, a self-supervised technique called Swapping Assignments between multiple Views (SwAV) is employed.
 
+# Methodology
+
+Build from [Ayush Thakur](https://twitter.com/ayushthakur0) and [Sayak Paul](https://twitter.com/RisingSayak)
 TensorFlow 2 implementation of [Unsupervised Learning of Visual Features by Contrasting Cluster Assignments](https://arxiv.org/abs/2006.09882) by Mathilde Caron, Ishan Misra, Julien Mairal, Priya Goyal, Piotr Bojanowski, Armand Joulin.
 
-To know more about SwAV and the experiments we performed with it you can check out our blog post [Unsupervised Visual Representation Learning with SwAV](https://app.wandb.ai/authors/swav-tf/reports/Unsupervised-visual-representation-learning-with-SwAV--VmlldzoyMjg3Mzg). Our blog post is structured in the following way - 
+A few changes to this code were made:
+- Uses Resnet-18 instead of Resnet-50
+- Set options.experimental_deterministic = True   
+- Add a seed to dataset.shuffle on get_multires_dataset function
 
-- Common problems in existing self-supervised methods (for visual representation learning)
-- SwAV at a high-level
-- Multi-crop augmentation policy and its promise
-- Contrasting the cluster assignments
-  - Cluster assignment as an optimal transport problem
-  - Swapped prediction problem to enforce consistency
-- A single forward pass in SwAV
-- Experimental results
-- Conclusion
+# Results 
 
-## Model weights for reproducibility
-Available [here](https://github.com/ayulockin/SwAV-TF/releases/tag/v0.1.0). 
+Initial results can be seen in [Self-supervised weather data clustering for inspecting local climate change](https://hdl.handle.net/10438/35365)
 
-## Results
-Results of all our experiments are available as a `wandb` dashboard. [![Explore-in W&B](https://img.shields.io/badge/Explore--in-W%26B-%23FFBE00)](https://app.wandb.ai/authors/swav-tf) 
 
-## Acknowledgements
-Thanks to Mathilde Caron for providing insightful pointers that helped us minimally implement SwAV.
-
-Thanks to Jiri Simsa of Google for providing us with tips that helped us improve our data input pipeline.
-
-Thanks to the [Google Developers Experts program](https://developers.google.com/programs/experts/0) for providing us with GCP credits.
