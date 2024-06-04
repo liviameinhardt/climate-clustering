@@ -1,6 +1,7 @@
 import tensorflow as tf
 import random
 
+
 AUTO = tf.data.experimental.AUTOTUNE
 
 # Reference: https://github.com/google-research/simclr/blob/master/data_util.py
@@ -47,8 +48,10 @@ def color_drop(x):
 	x = tf.tile(x, [1, 1, 3])
 	return x
 
+
 @tf.function
 def custom_augment(image):
+
 	# Random flips
 	image = random_apply(tf.image.flip_left_right, image, p=0.5)
 	# Randomly apply gausian blur
@@ -60,19 +63,37 @@ def custom_augment(image):
 
 	return image
 
+
 @tf.function
-def random_resize_crop(image, min_scale, max_scale, crop_size):
+def random_select_view(image):
+
+	# Random select one of image of the channel (group)
+	id_ = random.randint(0,image.shape[-1]-1) 
+
+	# the id_ is the random select position
+	image = image[:,:,id_:id_+1] 
+	
+	return image
+
+
+@tf.function
+def random_resize_crop(image, min_scale, max_scale, crop_size, max_shape=260, min_shape=160):
+
 	# Conditional resizing
-	if crop_size == 224:
-		image_shape = 260
+	if crop_size >= min_shape:
+		image_shape = max_shape
 		image = tf.image.resize(image, (image_shape, image_shape))
+
 	else:
-		image_shape = 160
+		image_shape = min_shape
 		image = tf.image.resize(image, (image_shape, image_shape))
+
 	# Get the crop size for given min and max scale
 	size = tf.random.uniform(shape=(1,), minval=min_scale*image_shape,
 		maxval=max_scale*image_shape, dtype=tf.float32)
+	
 	size = tf.cast(size, tf.int32)[0]
+
 	# Get the crop from the image
 	crop = tf.image.random_crop(image, (size,size,3))
 	crop_resize = tf.image.resize(crop, (crop_size, crop_size))
@@ -92,40 +113,53 @@ def scale_image(image):
 	image = tf.image.convert_image_dtype(image, tf.float32)
 	return image
 
+
 @tf.function
 def tie_together(image, min_scale, max_scale, crop_size):
-	# Retrieve the image features
-	image = image['image']
+
+
 	# Scale the pixel values
 	image = scale_image(image)
+	
 	# Random resized crops
-	image = random_resize_crop(image, min_scale,
-		max_scale, crop_size)
+	image = random_resize_crop(image, min_scale, max_scale, crop_size)
+	
 	# Color distortions & Gaussian blur
-	image = custom_augment(image)
+	# image = custom_augment(image)  #cant make theese for climate data
+
+	# Random select an image from similar ones (channels)
+	image = random_select_view(image)
 
 	return image
 
+
 def get_multires_dataset(dataset,
-	size_crops,
-	num_crops,
-	min_scale,
-	max_scale,
-	options=None):
+						size_crops,
+						num_crops,
+						min_scale,
+						max_scale,
+						options=None):
+	
 	loaders = tuple()
+
 	for i, num_crop in enumerate(num_crops):
+
 		for _ in range(num_crop):
+
 			loader = (
 					dataset
-					.shuffle(1024)
+					.shuffle(1024,seed=1)
 					.map(lambda x: tie_together(x, min_scale[i],
 						max_scale[i], size_crops[i]), num_parallel_calls=AUTO)
 				)
+			
 			if options!=None:
 				loader = loader.with_options(options)
+
 			loaders += (loader, )
 
 	return loaders
+
 
 def shuffle_zipped_output(a,b,c,d,e):
 	listify = [a,b,c,d,e]
