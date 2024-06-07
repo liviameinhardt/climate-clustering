@@ -17,7 +17,6 @@ options.experimental_optimization.apply_default_optimizations = True  # apply de
 options.experimental_deterministic = True                            # False disable deterministic order
 options.threading.max_intra_op_parallelism = 1           # overrides the maximum degree of intra-op parallelism 
 
-
 def main():
 
     parser = argparse.ArgumentParser(description='Process some integers and other parameters.')
@@ -88,9 +87,8 @@ def train_swav(batch_size, epochs, model_tag, prototypes, proportions=[], load_w
                                             n_crops = NUM_CROPS, proto_proportions = proportions,
                                             model_name=model_tag)
 
-    plt.plot(epoch_wise_loss, label='Epoch-wise Loss')
-    plt.axhline(y=np.log(prototypes), color='r', linestyle='--', label='ln(#prototypes)')
+    np.save(f'model_weights/loss_{model_tag}.npy',epoch_wise_loss)
 
- 
 if __name__ == "__main__":
     main()
+
