@@ -128,6 +128,7 @@ def tie_together(image, min_scale, max_scale, crop_size):
 	# image = custom_augment(image)  #cant make theese for climate data
 
 	# Random select an image from similar ones (channels)
+
 	image = random_select_view(image)
 
 	return image

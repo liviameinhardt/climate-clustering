@@ -88,8 +88,13 @@ def download(area_download,years_to_download,times_to_get,variables):
 def concat_files():
     
     #tp timesteps are diff than t2m and msl
+    datasets = [i for i in os.listdir('data/raw') if i[-5:] == '.grib']
 
-    datasets = [i for i in os.listdir('data/') if i[-5:] == '.grib']
+    pos = datasets[0].find("_")
+    start_year = min([int(i[pos+1:pos+5]) for i in datasets])
+
+    pos = datasets[0].find(".")
+    end_year = max([int(i[pos-4:pos]) for i in datasets])
 
     ds_list = []
 
@@ -103,15 +108,27 @@ def concat_files():
             ds.close()  
 
     ds = xr.concat(ds_list, dim='time')
-    output_file = 'data/msl_t2m_1983_2023.nc'
+    output_file = f'data/msl_t2m_{start_year}_{end_year}.nc'
     ds.to_netcdf(output_file)
 
 
-def save_values(file):
+def open_nc(file_path):
+
+    try:
+        ds = xr.open_dataset(file_path)
+
+    except Exception as e:
+        print(f"Error opening file: {e}")
+        return 
+
+    else:
+        return ds
+
+def save_values(variable, file= 'data/msl_t2m_1983_2023.nc',wind = 5):
     #just to save process
 
-    data = cfgrib.open_dataset('data/raw/' + file)
-    df = data.t2m.values
+    ds = open_nc(file)
+    df = ds[variable].values
 
     q99 = np.quantile(df,0.99)
     q10 = np.quantile(df,0.1)
@@ -121,35 +138,42 @@ def save_values(file):
 
     time, lat, long = norm_imgs.shape
 
-    wind = 8 #find best after
+     #find best after
 
     norm_imgs = norm_imgs.reshape(int(time/wind), wind, lat, long)
     norm_imgs = np.transpose(norm_imgs, (0, 2, 3, 1))
 
-    np.save('data/test',norm_imgs,allow_pickle=False)
+    np.save(f'data/{variable}',norm_imgs,allow_pickle=False)
+
+
+def build_single_variable_df(var='t2m'):
+   pass
 
 
 ###################
 
-area_download = [2.46, -71.97, -33.26,-36.64] #brazil area
+if __name__ == "__main__":
+        
+    area_download = [2.46, -71.97, -33.26,-36.64] #brazil area
 
-variables = [
-    '2m_temperature',
-    'total_precipitation',
-    'mean_sea_level_pressure'
-]
+    variables = [
+        '2m_temperature', #t2m
+        'total_precipitation', #tp
+        'mean_sea_level_pressure' #
+    ]
 
-years_to_download = [str(i) for i in range(1995,2000)]
+    years_to_download = [str(i) for i in range(183,2024)]
 
-times_available = [ '00:00', '01:00', '02:00',
-                  '03:00', '04:00', '05:00',
-                  '06:00', '07:00', '08:00',
-                  '09:00', '10:00', '11:00',
-                  '12:00', '13:00', '14:00',
-                  '15:00', '16:00', '17:00',
-                  '18:00', '19:00', '20:00',
-                  '21:00', '22:00', '23:00',]
+    times_available = [ '00:00', '01:00', '02:00',
+                    '03:00', '04:00', '05:00',
+                    '06:00', '07:00', '08:00',
+                    '09:00', '10:00', '11:00',
+                    '12:00', '13:00', '14:00',
+                    '15:00', '16:00', '17:00',
+                    '18:00', '19:00', '20:00',
+                    '21:00', '22:00', '23:00',]
 
-times_to_get = times_available[::3]
+    times_to_get = times_available[::3]
 
-# download(area_download,years_to_download,times_to_get,variables)
+    # download(area_download,years_to_download,times_to_get,variables)
+    concat_files()
