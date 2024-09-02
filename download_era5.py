@@ -108,7 +108,7 @@ def concat_files():
             ds.close()  
 
     ds = xr.concat(ds_list, dim='time')
-    output_file = f'data/msl_t2m_{start_year}_{end_year}.nc'
+    output_file = f'data/prep_{start_year}_{end_year}.nc'
     ds.to_netcdf(output_file)
 
 
@@ -176,4 +176,4 @@ if __name__ == "__main__":
     times_to_get = times_available[::3]
 
     # download(area_download,years_to_download,times_to_get,variables)
-    concat_files()
+    # concat_files()
