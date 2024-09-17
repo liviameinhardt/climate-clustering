@@ -1,3 +1,7 @@
 cdsapi
 cfgrib
 xarray
+cdstoolbox-remote
+eccodes
+netCDF4
+h5netcdf

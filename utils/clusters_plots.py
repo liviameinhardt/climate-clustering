@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import statsmodels.api as sm ##qq plots
+# import statsmodels.api as sm ##qq plots
 
 def clusters_plots(final_data, assignments, prototypes, model_name):
 
@@ -73,5 +73,4 @@ def clusters_plots(final_data, assignments, prototypes, model_name):
 
     fig.savefig(f'figs/{model_name}_samples.png')
     print('Done Samples')
-        
-
+       
