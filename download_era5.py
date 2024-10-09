@@ -25,7 +25,9 @@ import numpy as np
 from time import sleep
 import re
 
-def download_era5_single_levels(area_download,years_to_download,times_to_get,variables,dataset_tag=''):
+def download_era5_single_levels(area_download,years_to_download,
+                                times_to_get,variables,dataset_tag='',
+                                data_format=  'grib', folder='data/raw'):
 
     cds_client = cdsapi.Client()
 
@@ -43,7 +45,8 @@ def download_era5_single_levels(area_download,years_to_download,times_to_get,var
 
         print('Downloading',cur_years)
         
-        dataset_name =f'data/raw/era{dataset_tag}_{start_y}_{end_y}.grib'
+        ext = data_format if data_format == 'grib' else 'nc'
+        dataset_name =f'{folder}/era{dataset_tag}_{start_y}_{end_y}.{ext}'
         datasets.append(dataset_name)
 
         era_dataset = "reanalysis-era5-single-levels"
@@ -65,7 +68,7 @@ def download_era5_single_levels(area_download,years_to_download,times_to_get,var
 
             'time': times_to_get,
             'area': area_download,
-            'data_format': 'grib',
+            'data_format': data_format,
             'download_format': 'unarchived',
 
         }
@@ -81,35 +84,42 @@ def download_era5_single_levels(area_download,years_to_download,times_to_get,var
 
         sleep(10)
 
-def concat_files(folder='data/raw',file_name='era',dataset_tag=''):
+
+
+
+def concat_files(folder='data/raw',file_name='era',dataset_tag='',data_format=  'grib'):
     
     #tp timesteps are diff than t2m and msl
-    datasets = [i for i in os.listdir(folder) if i[-5:] == '.grib']
+    datasets = [i for i in os.listdir(folder) if i[-len(data_format):] == data_format]
     datasets = [i for i in datasets if dataset_tag in i]
 
     pattern = r'(\d{4})_(\d{4})'
 
-    start_year = [
+    start_year = min([
         match.group(1)
         for filename in datasets
         if (match := re.search(pattern, filename))  # Walrus operator for assignment and condition
-    ]
+    ])
 
-    end_year = [
+    end_year = max([
         match.group(2)
         for filename in datasets
         if (match := re.search(pattern, filename))  
-    ]
+    ])
 
     ds_list = []
 
     for file in sorted(datasets):
 
         if file:
-        
-            ds = cfgrib.open_dataset( os.path.join(folder,file) ) 
-            ds_list.append(ds)
+    
+            if data_format == 'grib':
+                ds = cfgrib.open_dataset( os.path.join(folder,file) ) 
+            
+            elif data_format == 'nc':
+                ds = xr.open_dataset(os.path.join(folder,file))
 
+            ds_list.append(ds)
             ds.close()  
 
     ds = xr.concat(ds_list, dim='time')
@@ -158,20 +168,13 @@ def get_normalized_values(variable, file= 'data/msl_t2m_1983_2023.nc',
 
     return norm_imgs
 
-
 ###################
 
 if __name__ == "__main__":
         
     area_download = [2.46, -71.97, -33.26,-36.64] #brazil area [North, West, South, East ]
 
-    variables = [
-        # '2m_temperature', #t2m
-        # 'mean_sea_level_pressure' #msl
-        'total_precipitation'
-    ]
-
-    years_to_download = [str(i) for i in range(2013,2024)]
+    years_to_download = [str(i) for i in range(1983,2024)]
 
     times_available = [ '00:00', '01:00', '02:00',
                         '03:00', '04:00', '05:00',
@@ -183,6 +186,15 @@ if __name__ == "__main__":
                         '21:00', '22:00', '23:00']
 
     times_to_get = times_available[::3]
-    
-    download_era5_single_levels(area_download,years_to_download,times_to_get,variables,dataset_tag='tp')
-    concat_files(dataset_tag='tp')
+     
+
+    # download_era5_single_levels(area_download,years_to_download,times_to_get,
+    #                             variables=['2m_temperature', 'mean_sea_level_pressure'],dataset_tag='t2m_msl')
+
+    # concat_files(dataset_tag='t2m_msl')
+
+    #prep data in grib format dont have the same shape // has a lot of nan values
+    # download_era5_single_levels(area_download,years_to_download,times_to_get,['total_precipitation'],
+    #                             dataset_tag='tp',data_format='netcdf')
+
+    # concat_files(dataset_tag='tp',data_format='nc')
