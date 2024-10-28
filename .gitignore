@@ -1,3 +1,4 @@
-data/
+data/era5_data/
+data/raw/
 .venv
 old_code/
