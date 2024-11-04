@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import torchvision.transforms as transforms
 import random
 import cv2 
-
+import matplotlib.pyplot as plt
 
 
 def open_nc(file_path):
@@ -49,21 +49,15 @@ def get_data(file_path,variable,quantile=False,wind=1):
 
     return norm_imgs
 
-def extract_patches(image_tensor, patch_size=(32, 32), num_patches=15, overlap=4):
 
-    height, width = image_tensor.shape
-    patch_height, patch_width = patch_size
+def select_patch(num_patches,valid_y,valid_x,overlap):
 
-    # Calculate valid range for patch centers
-    valid_y = height - patch_height
-    valid_x = width - patch_width
-
-    # Store the centers of the patches to ensure low overlap
     centers = []
 
     for _ in range(num_patches):
 
         while True:
+            
             center_y = random.randint(0, valid_y)
             center_x = random.randint(0, valid_x)
             new_center = (center_y, center_x)
@@ -74,6 +68,20 @@ def extract_patches(image_tensor, patch_size=(32, 32), num_patches=15, overlap=4
                 
                 centers.append(new_center)
                 break
+
+    return centers
+
+def extract_patches(image_tensor, patch_size=(32, 32), num_patches=15, overlap=4):
+
+    height, width = image_tensor.shape
+    patch_height, patch_width = patch_size
+
+    # Calculate valid range for patch centers
+    valid_y = height - patch_height
+    valid_x = width - patch_width
+
+    # Store the centers of the patches to ensure low overlap
+    centers = select_patch(num_patches,valid_y,valid_x,overlap)
 
     patches = []
     for center in centers:
@@ -94,8 +102,10 @@ def get_data_in_patches(data,patch_size=(32, 32), num_patches=15, overlap=4):
     return np.array(final_data)
 
 
-def highlight_patches(original_image, centers, patch_size=(32, 32)):
-    
+def highlight_patches(original_image, centers=None, n_patches=15, patch_size=(32, 32),overlap=10):
+
+    if centers is None:
+        _, centers = extract_patches(original_image,patch_size,n_patches,overlap)
     
     patch_height, patch_width = patch_size
 
@@ -107,13 +117,43 @@ def highlight_patches(original_image, centers, patch_size=(32, 32)):
         # Draw a rectangle around the patch using OpenCV
         cv2.rectangle(original_image_bgr, (x, y), (x + patch_width, y + patch_height), (255, 0, 0), 1)
 
-    plt.imshow(original_image_bgr / 255.0)  # Convert back to [0, 1] for displaying
+    plt.imshow(original_image_bgr / 255.0,vmin=0,vmax=1,cmap='bwr')  # Convert back to [0, 1] for displaying
     plt.axis('off')
     plt.title('Highlighted Patches')
     plt.show()
 
 
-# #get patches 32x32
-data = get_data("data/era_t2m_msl_1983_2023.nc",variable='t2m')
-data = get_data_in_patches(data,patch_size=(40, 40), num_patches=10, overlap=4)
-np.save("data/training_patches/temperature.npy",data,allow_pickle=False)
+
+
+patches= 3
+size = (40,40)
+overlap= 20
+
+# data_br = get_data("data/era5_data/era_t2m_msl_1983_2023.nc",variable='t2m')
+# highlight_patches(data_br[0],patch_size=size,overlap=overlap,n_patches=patches)
+
+
+# data = get_data_in_patches(data_br,patch_size=size, num_patches=patches, overlap=overlap)
+# np.save(f"data/training_patches/temperature_{patches}p.npy",data,allow_pickle=False)
+
+# data =  np.load(f"data/training_patches/temperature_{patches}p.npy",allow_pickle=False,mmap_mode="r")
+
+#%%
+
+#display random crops 
+
+# fig, ax = plt.subplots(5, 5, figsize=(20, 20))
+
+# # Display the image in the first subplot
+
+# # Hide axes for all subplots
+# indices = list(range(len(data)))
+
+# for i in range(5):
+#     for j in range(5):
+#         index = random.choice(indices)
+#         indices.remove(index)
+#         ax[i, j].imshow(data[index], vmin=0, vmax=1, cmap='bwr')
+#         ax[i, j].axis('off')
+
+# plt.show()
