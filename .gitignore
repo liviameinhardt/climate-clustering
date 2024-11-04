@@ -1,4 +1,4 @@
 data/
 .venv
 swav/old_code/
-msn_code/checkpoint/temperarure-checkpoints/other_epochs
+msn_code/checkpoint
